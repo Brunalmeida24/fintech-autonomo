@@ -98,26 +98,48 @@ export default function Home() {
 
   const abrirNota = () => {
     if (!ultimaTransacao && transacoes.length === 0) {
-      setUltimaTransacao({
+      const notaDefault = {
         id: Date.now(),
         valor: 200,
         imposto: 12,
         liquido: 188,
         data: new Date().toLocaleString("pt-BR"),
         descricao: "Serviço prestado",
-      });
-      setNotaGerada({
-        id: Date.now(),
-        valor: 200,
-        imposto: 12,
-        liquido: 188,
-        data: new Date().toLocaleString("pt-BR"),
-        descricao: "Serviço prestado",
-      });
+      };
+      setUltimaTransacao(notaDefault);
+      setNotaGerada(notaDefault);
     } else {
       setNotaGerada(ultimaTransacao || transacoes[0]);
     }
     setShowNota(true);
+  };
+
+  const compartilharNota = async () => {
+    if (!notaGerada) return;
+
+    const texto =
+      `🧾 *Nota Fiscal de Serviço*\n` +
+      `Número: #${String(notaGerada.id).slice(-6)}\n` +
+      `Data: ${notaGerada.data}\n` +
+      `Descrição: ${notaGerada.descricao}\n\n` +
+      `Valor do serviço: ${formatarMoeda(notaGerada.valor)}\n` +
+      `ISS / Imposto (6%): ${formatarMoeda(notaGerada.imposto)}\n` +
+      `Valor líquido: ${formatarMoeda(notaGerada.liquido)}\n\n` +
+      `Gerado via FinAutônomo`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Nota Fiscal de Serviço",
+          text: texto,
+        });
+      } catch {
+        // usuário cancelou o compartilhamento, sem problema
+      }
+    } else {
+      await navigator.clipboard.writeText(texto);
+      alert("Nota copiada! Cole no WhatsApp ou onde preferir.");
+    }
   };
 
   const saldoTotal = saldoPessoal + saldoProfissional;
@@ -342,12 +364,20 @@ export default function Home() {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowNota(false)}
-              className="w-full bg-gray-900 text-white rounded-2xl py-4 font-semibold mt-6"
-            >
-              Fechar
-            </button>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowNota(false)}
+                className="flex-1 bg-gray-100 text-gray-700 rounded-2xl py-4 font-semibold"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={compartilharNota}
+                className="flex-1 bg-emerald-500 text-white rounded-2xl py-4 font-semibold flex items-center justify-center gap-2"
+              >
+                <span>📤</span> Compartilhar
+              </button>
+            </div>
           </div>
         </div>
       )}
